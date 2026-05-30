@@ -22,13 +22,102 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
     
-    - name: Create local.properties
-      run: echo "sdk.dir=$ANDROID_HOME" > local.properties
-    
-    - name: Build with Gradle
+    - name: Create Android project from scratch
       run: |
-        chmod +x gradlew
-        ./gradlew assembleDebug --stacktrace
+        # 创建项目结构
+        mkdir -p app/src/main/java/com/inventory/manager
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/assets
+        
+        # 复制文件到正确位置
+        cp -r app/src/main/* app/src/main/ 2>/dev/null || true
+        
+        # 创建 build.gradle
+        cat > build.gradle << 'EOF'
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.0'
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        task clean(type: Delete) {
+            delete rootProject.buildDir
+        }
+        EOF
+        
+        # 创建 settings.gradle
+        cat > settings.gradle << 'EOF'
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "InventoryManager"
+        include ':app'
+        EOF
+        
+        # 创建 app/build.gradle
+        cat > app/build.gradle << 'EOF'
+        plugins {
+            id 'com.android.application'
+        }
+        android {
+            namespace 'com.inventory.manager'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.inventory.manager"
+                minSdk 21
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+            buildTypes {
+                release {
+                    minifyEnabled false
+                }
+                debug {
+                    debuggable true
+                }
+            }
+        }
+        dependencies {
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+        }
+        EOF
+        
+        # 创建 local.properties
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
+    
+    - name: Setup Gradle
+      run: |
+        # 下载并安装 Gradle
+        wget -q https://services.gradle.org/distributions/gradle-8.2-bin.zip
+        unzip -q gradle-8.2-bin.zip
+        export PATH=$PATH:$(pwd)/gradle-8.2/bin
+        echo "PATH=$PATH" >> $GITHUB_ENV
+    
+    - name: Build APK
+      run: |
+        export PATH=$PATH:$(pwd)/gradle-8.2/bin
+        gradle assembleDebug --no-daemon
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
