@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>库存管家 · 专业版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #f5f7fb;
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Helvetica, 'Apple Color Emoji', sans-serif;
+            height: 100vh;
+            width: 100%;
+            overflow: hidden;
+            position: fixed;
+        }
+
+        .phone-app {
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+            border-radius: 0;
+            overflow: hidden;
+        }
+
+        .app-header {
+            background: white;
+            padding: 14px 18px 10px 18px;
+            border-bottom: 1px solid #eef2ff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .home-icon { font-size: 24px; }
+        .app-title { font-size: 18px; font-weight: 620; color: #0f2b3d; }
+
+        .pages-container {
+            flex: 1;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+        }
+        .page {
+            display: none;
+            padding: 16px 14px 24px;
+        }
+        .page.active-page { display: block; }
+
+        .bottom-nav {
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(4px);
+            border-top: 1px solid #eef2f8;
+            display: flex;
+            padding: 6px 12px 10px;
+            justify-content: space-around;
+            flex-shrink: 0;
+        }
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px 0;
+            border-radius: 40px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #6c7a91;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
+        .nav-item.active-nav {
+            background: #eef2ff;
+            color: #1d4ed8;
+            font-weight: 600;
+        }
+
+        .form-group { margin-bottom: 14px; }
+        label { font-size: 13px; font-weight: 510; color: #1e2a3e; margin-bottom: 4px; display: block; }
+        .required-star { color: #e11d48; margin-left: 4px; font-size: 12px; }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 14px;
+            background: #fefefe;
+            outline: none;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59,130,246,0.1);
+        }
+        .auto-suggest {
+            background: white;
+            border: 1px solid #dce3ec;
+            border-radius: 16px;
+            max-height: 180px;
+            overflow-y: auto;
+            position: absolute;
+            width: calc(100% - 2px);
+            z-index: 30;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+        .suggest-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #f0f4fa; font-size: 13px; }
+        .suggest-item:active { background: #eef3ff; }
+        .relative { position: relative; }
+
+        button {
+            background: #1d4ed8;
+            color: white;
+            border: none;
+            padding: 11px 14px;
+            border-radius: 28px;
+            font-weight: 600;
+            font-size: 15px;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+        button:active { transform: scale(0.97); background: #1e3a8a; }
+        .import-btn {
+            background: #10b981;
+            margin-bottom: 10px;
+        }
+
+        .stock-table-container {
+            overflow-x: auto;
+            margin-top: 12px;
+            border-radius: 20px;
+            background: #ffffff;
+        }
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            min-width: 520px;
+        }
+        .stock-table th {
+            background: #f8fafd;
+            padding: 10px 6px;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 1px solid #e9edf2;
+        }
+        .stock-table td {
+            padding: 10px 6px;
+            border-bottom: 1px solid #f0f3f8;
+            color: #1f2a40;
+            vertical-align: middle;
+        }
+        .item-name-cell { font-weight: 500; }
+        .stock-num { font-weight: 700; color: #1e40af; }
+        .empty-tip { text-align: center; color: #8ba0bc; padding: 40px 16px; background: #fafcff; border-radius: 24px; }
+
+        .delete-stock-btn {
+            background: #fee2e2;
+            color: #b91c1c;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 28px;
+            font-size: 11px;
+            cursor: pointer;
+            width: auto;
+            margin: 0;
+        }
+
+        .search-export-bar {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .search-box {
+            flex: 3;
+            min-width: 160px;
+        }
+        .search-box input {
+            border-radius: 40px;
+            background: #f8fafc;
+            padding: 10px 14px;
+            font-size: 13px;
+            border: 1px solid #e2e8f0;
+            margin: 0;
+        }
+        .export-search-btn {
+            flex: 1;
+            background: #0f3b2c;
+            margin-top: 0;
+            padding: 10px 0;
+            font-size: 12px;
+            border-radius: 40px;
+        }
+        .time-note { font-size: 9px; color: #3b82f6; margin-top: -6px; margin-bottom: 10px; text-align: right; }
+        .file-hint { font-size: 9px; color: #6f8fbb; text-align: center; margin-top: 12px; }
+        .custom-toast {
+            position: fixed;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%) scale(0.9);
+            background: #1f2937e6;
+            backdrop-filter: blur(12px);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-size: 12px;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .custom-toast.show { opacity: 1; transform: translateX(-50%) scale(1); }
+        h3 { font-size: 17px; margin-bottom: 12px; font-weight: 620; color: #0f2c44; }
+
+        .permission-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(3px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+        }
+        .permission-overlay.show { visibility: visible; opacity: 1; }
+        .permission-card {
+            background: white;
+            width: 85%;
+            max-width: 300px;
+            border-radius: 28px;
+            padding: 20px 16px;
+            text-align: center;
+        }
+        .permission-card h4 { font-size: 17px; margin-bottom: 10px; }
+        .permission-card p { font-size: 12px; color: #475569; margin-bottom: 16px; }
+        .permission-card button {
+            background: #1d4ed8;
+            width: auto;
+            padding: 8px 18px;
+        }
+        .delete-confirm-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(3px);
+            z-index: 1100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            visibility: hidden;
+            opacity: 0;
+        }
+        .delete-confirm-overlay.show { visibility: visible; opacity: 1; }
+        .delete-confirm-card {
+            background: white;
+            width: 80%;
+            max-width: 260px;
+            border-radius: 24px;
+            padding: 18px;
+            text-align: center;
+        }
+        .delete-confirm-card p { margin: 10px 0 16px; font-size: 14px; }
+        .delete-confirm-actions { display: flex; gap: 10px; justify-content: center; }
+        .delete-confirm-actions button { width: auto; padding: 6px 16px; margin: 0; }
+        .cancel-del-btn { background: #94a3b8; }
+        .confirm-del-btn { background: #dc2626; }
+        .export-snack {
+            position: fixed;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293be6;
+            backdrop-filter: blur(16px);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-size: 13px;
+            z-index: 300;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .export-snack.show { opacity: 1; }
+    </style>
+</head>
+<body>
+<div class="phone-app">
+    <div class="app-header">
+        <span class="home-icon">🏠</span>
+        <span class="app-title">库存管家</span>
+    </div>
+    <div class="pages-container">
+        <div id="inPage" class="page active-page">
+            <h3>📦 物资入库</h3>
+            <button id="importExcelBtn" class="import-btn">📂 从Excel表格导入</button>
+            <div class="form-group"><label>材料名称 <span class="required-star">*</span></label><input type="text" id="inName" placeholder="例: 水泥"></div>
+            <div class="form-group relative"><label>项目名称 <span class="required-star">*</span></label><input type="text" id="inProject" autocomplete="off"><div id="projectSuggest" class="auto-suggest"></div></div>
+            <div class="form-group relative"><label>使用部位</label><input type="text" id="inPart" autocomplete="off"><div id="partSuggest" class="auto-suggest"></div></div>
+            <div class="form-group"><label>入库时间</label><input type="datetime-local" id="inTime" step="1"></div>
+            <div class="time-note" id="inTimeNote">⏱️ 当前时间自动同步</div>
+            <div class="form-group"><label>规格</label><input type="text" id="inSpec" placeholder="例: 42.5级"></div>
+            <div class="form-group"><label>单位</label><input type="text" id="inUnit" placeholder="吨/箱/个"></div>
+            <div class="form-group"><label>单价(元)</label><input type="number" id="inPrice" step="0.01" placeholder="0.00"></div>
+            <div class="form-group"><label>数量</label><input type="number" id="inQty" step="1" value="1"></div>
+            <div class="form-group"><label>备注</label><textarea id="inRemark" rows="2" placeholder="可选"></textarea></div>
+            <button id="addInBtn">✔ 确认入库</button>
+        </div>
+
+        <div id="outPage" class="page">
+            <h3>📤 物品出库</h3>
+            <div class="form-group relative"><label>出库名称 <span class="required-star">*</span></label><input type="text" id="outName" autocomplete="off" placeholder="点击或输入筛选"><div id="outSuggest" class="auto-suggest"></div></div>
+            <div class="form-group relative"><label>项目名称 <span class="required-star">*</span></label><input type="text" id="outProject" autocomplete="off" placeholder="点击或输入筛选"><div id="outProjectSuggest" class="auto-suggest"></div></div>
+            <div class="form-group"><label>出库数量</label><input type="number" id="outQty" step="1" value="1"></div>
+            <div class="form-group"><label>领用人</label><input type="text" id="outUser" placeholder="姓名"></div>
+            <div class="form-group"><label>出库时间</label><input type="datetime-local" id="outTime" step="1"></div>
+            <div class="time-note" id="outTimeNote">⏱️ 当前时间自动同步</div>
+            <div class="form-group"><label>备注</label><textarea id="outRemark" rows="2"></textarea></div>
+            <button id="addOutBtn">⬇ 确认出库</button>
+        </div>
+
+        <div id="stockPage" class="page">
+            <div class="search-export-bar">
+                <div class="search-box">
+                    <input type="text" id="unifiedSearch" placeholder="🔍 搜索材料 / 项目名称" autocomplete="off">
+                </div>
+                <button id="exportSearchResultBtn" class="export-search-btn">📎 导出筛选结果</button>
+            </div>
+            <div id="stockListContainer" class="stock-table-container"><div class="empty-tip">✨ 暂无库存数据</div></div>
+            <div class="file-hint">💾 点击导出后会弹出保存窗口，可选择保存位置</div>
+        </div>
+    </div>
+    <div class="bottom-nav">
+        <button class="nav-item active-nav" data-page="in">入库</button>
+        <button class="nav-item" data-page="out">出库</button>
+        <button class="nav-item" data-page="stock">库存</button>
+    </div>
+</div>
+<div id="encourageToast" class="custom-toast"></div>
+<div id="exportSnack" class="export-snack">📁 文件已保存</div>
+
+<div id="permissionOverlay" class="permission-overlay">
+    <div class="permission-card">
+        <h4>📂 导入Excel表格</h4>
+        <p>请选择 .xls 或 .xlsx 文件，表格需包含列：<strong>材料名称、规格、单位、数量</strong></p>
+        <button id="confirmImportBtn">选择文件并导入</button>
+        <button id="closeImportBtn" style="background:#94a3b8; margin-top:8px;">取消</button>
+    </div>
+</div>
+
+<div id="deleteConfirmOverlay" class="delete-confirm-overlay">
+    <div class="delete-confirm-card">
+        <h4>⚠️ 删除材料</h4>
+        <p id="deleteConfirmText">确定删除该材料及其所有记录？</p>
+        <div class="delete-confirm-actions">
+            <button id="cancelDeleteBtn" class="cancel-del-btn">取消</button>
+            <button id="confirmDeleteBtn" class="confirm-del-btn">删除</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script>
+    const ENCOURAGE_PHRASES = ["🎉 太棒了！", "✨ 操作成功！", "📦 入库成功！", "💪 出库顺利！", "🌟 库存达人！"];
+    function getRandomEncouragement() { return ENCOURAGE_PHRASES[Math.floor(Math.random() * ENCOURAGE_PHRASES.length)]; }
+    let toastTimeout = null;
+    function showEncourageToast(message, customEncourage = null) {
+        const toast = document.getElementById('encourageToast');
+        if (!toast) return;
+        toast.textContent = `${message} ${customEncourage || getRandomEncouragement()}`;
+        toast.classList.remove('show');
+        void toast.offsetWidth;
+        toast.classList.add('show');
+        if (toastTimeout) clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => toast.classList.remove('show'), 2400);
+    }
+
+    let inboundRecords = [];
+    let outboundRecords = [];
+
+    function loadData() {
+        const storedIn = localStorage.getItem("inv_in_records_apk");
+        const storedOut = localStorage.getItem("inv_out_records_apk");
+        if (storedIn) inboundRecords = JSON.parse(storedIn);
+        if (storedOut) outboundRecords = JSON.parse(storedOut);
+        inboundRecords = inboundRecords.map(r => ({ ...r, project: r.project || "", part: r.part || "" }));
+        outboundRecords = outboundRecords.map(r => ({ ...r, project: r.project || "" }));
+    }
+    function saveData() {
+        localStorage.setItem("inv_in_records_apk", JSON.stringify(inboundRecords));
+        localStorage.setItem("inv_out_records_apk", JSON.stringify(outboundRecords));
+    }
+
+    function getAllInNames() { return [...new Set(inboundRecords.map(r => r.name).filter(n => n?.trim()))]; }
+    function getAllProjectNames() { return [...new Set(inboundRecords.map(r => r.project).filter(p => p?.trim()))]; }
+    function getAllPartNames() { return [...new Set(inboundRecords.map(r => r.part).filter(p => p?.trim()))]; }
+    function computeStock(itemName) {
+        let totalIn = inboundRecords.filter(r => r.name === itemName).reduce((s, r) => s + (Number(r.quantity) || 0), 0);
+        let totalOut = outboundRecords.filter(r => r.name === itemName).reduce((s, r) => s + (Number(r.quantity) || 0), 0);
+        return totalIn - totalOut;
+    }
+    
+    function getAllStockItems() {
+        const allNames = getAllInNames();
+        const result = [];
+        for (let name of allNames) {
+            const stock = computeStock(name);
+            const lastIn = inboundRecords.filter(r => r.name === name).sort((a,b)=> (b.time||'').localeCompare(a.time||''))[0];
+            const projects = [...new Set(inboundRecords.filter(r=>r.name===name).map(r=>r.project).filter(p=>p))];
+            result.push({ name, stock, unit: lastIn?.unit || '', spec: lastIn?.spec || '', price: lastIn?.price || '', projects: projects.join(', ') });
+        }
+        result.sort((a,b)=> a.name.localeCompare(b.name));
+        return result;
+    }
+    
+    function filterStockItems(searchTerm) {
+        if (!searchTerm.trim()) return getAllStockItems();
+        const term = searchTerm.trim().toLowerCase();
+        return getAllStockItems().filter(item => item.name.toLowerCase().includes(term) || item.projects.toLowerCase().includes(term));
+    }
+    
+    let currentSearchKeyword = "";
+    function renderStockPage() {
+        const searchInput = document.getElementById('unifiedSearch');
+        if (searchInput) currentSearchKeyword = searchInput.value;
+        const filtered = filterStockItems(currentSearchKeyword);
+        const container = document.getElementById('stockListContainer');
+        if (!container) return;
+        if (filtered.length === 0) { container.innerHTML = '<div class="empty-tip">📭 没有找到匹配的材料或项目</div>'; return; }
+        let html = `<table class="stock-table"><thead><tr><th>材料名称</th><th>规格</th><th>单位</th><th>单价</th><th>库存</th><th>关联项目</th><th>操作</th></tr></thead><tbody>`;
+        for (let it of filtered) {
+            html += `<tr><td class="item-name-cell">${escapeHtml(it.name)}</td><td>${escapeHtml(it.spec) || '—'}</td><td>${escapeHtml(it.unit) || '—'}</td><td>${it.price ? '¥' + it.price : '—'}</td><td class="stock-num">${it.stock}</td><td>${escapeHtml(it.projects) || '—'}</td><td><button class="delete-stock-btn" data-name="${escapeHtml(it.name)}">🗑️ 删</button></td></tr>`;
+        }
+        html += `</tbody></table>`;
+        container.innerHTML = html;
+        document.querySelectorAll('.delete-stock-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => { const name = btn.getAttribute('data-name'); if (name) showDeleteConfirm(name); });
+        });
+    }
+    
+    async function exportFilteredResult() {
+        const filtered = filterStockItems(currentSearchKeyword);
+        if (!filtered.length) { showEncourageToast("📭 无数据可导出"); return; }
+        const exportData = filtered.map(item => ({ "材料名称": item.name, "规格": item.spec || '—', "单位": item.unit || '—', "单价(元)": item.price || '—', "当前库存": `${item.stock} ${item.unit || ''}`, "关联项目": item.projects || '—' }));
+        const timestamp = new Date().toISOString().slice(0,19).replace(/:/g, '-');
+        const headers = Object.keys(exportData[0]);
+        const rows = [headers, ...exportData.map(row => headers.map(h => row[h]))];
+        let csv = rows.map(row => row.map(cell => { let s = String(cell??'').replace(/"/g,'""'); if(s.includes(',')||s.includes('"')||s.includes('\n')) s=`"${s}"`; return s; }).join(',')).join('\n');
+        const blob = new Blob(["\uFEFF" + csv], { type: "application/vnd.ms-excel" });
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await window.showSaveFilePicker({ suggestedName: `库存筛选_${timestamp}.xls`, types: [{ accept: { 'application/vnd.ms-excel': ['.xls'] } }] });
+                const writable = await handle.createWritable();
+                await writable.write(blob);
+                await writable.close();
+                showExportSuccessToast(`✅ 已保存`);
+                return;
+            } catch(e) { if(e.name !== 'AbortError') fallbackSave(blob, timestamp); }
+        } else { fallbackSave(blob, timestamp); }
+    }
+    function fallbackSave(blob, timestamp) {
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = `库存筛选_${timestamp}.xls`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showExportSuccessToast(`📁 文件已保存`);
+    }
+    function showExportSuccessToast(msg) { const snack = document.getElementById('exportSnack'); if(snack){ snack.textContent = msg; snack.classList.add('show'); setTimeout(() => snack.classList.remove('show'), 2500); } }
+    function escapeHtml(str) { if (!str) return ''; return str.replace(/[&<>]/g, m => m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'); }
+    function getCurrentDateTimeLocal() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}T${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; }
+    function refreshAllTimes() { const cur=getCurrentDateTimeLocal(); if(document.getElementById('inTime')&&!document.getElementById('inTime').value) document.getElementById('inTime').value=cur; if(document.getElementById('outTime')&&!document.getElementById('outTime').value) document.getElementById('outTime').value=cur; }
+    
+    let pendingDeleteMaterial = null;
+    function showDeleteConfirm(name) { pendingDeleteMaterial = name; document.getElementById('deleteConfirmText').innerText = `彻底删除「${name}」吗？`; document.getElementById('deleteConfirmOverlay').classList.add('show'); }
+    function hideDeleteConfirm() { document.getElementById('deleteConfirmOverlay').classList.remove('show'); pendingDeleteMaterial=null; }
+    function executeDeleteMaterial() { if(pendingDeleteMaterial){ inboundRecords=inboundRecords.filter(r=>r.name!==pendingDeleteMaterial); outboundRecords=outboundRecords.filter(r=>r.name!==pendingDeleteMaterial); saveData(); showEncourageToast(`🗑️ 已删除「${pendingDeleteMaterial}」`); renderStockPage(); hideDeleteConfirm(); } }
+    
+    let pTimeout, paTimeout, outNameTimeout, outProjTimeout;
+    function setupProjectSuggest() { const input=document.getElementById('inProject'), box=document.getElementById('projectSuggest'); if(!input) return; const update=()=>{ const val=input.value.trim().toLowerCase(); if(!val){box.style.display='none';return;} const matches=getAllProjectNames().filter(p=>p.toLowerCase().includes(val)); if(!matches.length){box.style.display='none';return;} box.innerHTML=matches.map(m=>`<div class="suggest-item" data-val="${escapeHtml(m)}">🏷️ ${escapeHtml(m)}</div>`).join(''); box.style.display='block'; box.querySelectorAll('.suggest-item').forEach(el=>el.addEventListener('click',()=>{input.value=el.dataset.val;box.style.display='none';})); }; input.addEventListener('input',()=>{clearTimeout(pTimeout); pTimeout=setTimeout(update,120);}); document.addEventListener('click',(e)=>{if(box&&!box.contains(e.target)&&e.target!==input) box.style.display='none';}); }
+    function setupPartSuggest() { const input=document.getElementById('inPart'), box=document.getElementById('partSuggest'); if(!input) return; const update=()=>{ const val=input.value.trim().toLowerCase(); if(!val){box.style.display='none';return;} const matches=getAllPartNames().filter(p=>p.toLowerCase().includes(val)); if(!matches.length){box.style.display='none';return;} box.innerHTML=matches.map(m=>`<div class="suggest-item" data-val="${escapeHtml(m)}">📍 ${escapeHtml(m)}</div>`).join(''); box.style.display='block'; box.querySelectorAll('.suggest-item').forEach(el=>el.addEventListener('click',()=>{input.value=el.dataset.val;box.style.display='none';})); }; input.addEventListener('input',()=>{clearTimeout(paTimeout); paTimeout=setTimeout(update,120);}); document.addEventListener('click',(e)=>{if(box&&!box.contains(e.target)&&e.target!==input) box.style.display='none';}); }
+    function setupOutNameSuggest() { const input=document.getElementById('outName'), box=document.getElementById('outSuggest'); if(!input) return; const update=()=>{ const val=input.value.trim().toLowerCase(); const matches=getAllInNames().filter(n=>!val||n.toLowerCase().includes(val)); if(!matches.length){box.style.display='none';return;} box.innerHTML=matches.map(n=>`<div class="suggest-item" data-name="${escapeHtml(n)}">📦 ${escapeHtml(n)}</div>`).join(''); box.style.display='block'; box.querySelectorAll('.suggest-item').forEach(el=>el.addEventListener('click',()=>{input.value=el.dataset.name;box.style.display='none';})); }; input.addEventListener('input',()=>{clearTimeout(outNameTimeout); outNameTimeout=setTimeout(update,100);}); input.addEventListener('focus',update); document.addEventListener('click',(e)=>{if(box&&!box.contains(e.target)&&e.target!==input) box.style.display='none';}); input.addEventListener('blur',()=>{if(input.value.trim()&&!getAllInNames().includes(input.value.trim())){input.value=''; showEncourageToast("请从列表选择物品");}}); }
+    function setupOutProjectSuggest() { const input=document.getElementById('outProject'), box=document.getElementById('outProjectSuggest'); if(!input) return; const update=()=>{ const val=input.value.trim().toLowerCase(); const matches=getAllProjectNames().filter(p=>!val||p.toLowerCase().includes(val)); if(!matches.length){box.style.display='none';return;} box.innerHTML=matches.map(p=>`<div class="suggest-item" data-proj="${escapeHtml(p)}">🏷️ ${escapeHtml(p)}</div>`).join(''); box.style.display='block'; box.querySelectorAll('.suggest-item').forEach(el=>el.addEventListener('click',()=>{input.value=el.dataset.proj;box.style.display='none';})); }; input.addEventListener('input',()=>{clearTimeout(outProjTimeout); outProjTimeout=setTimeout(update,100);}); input.addEventListener('focus',update); document.addEventListener('click',(e)=>{if(box&&!box.contains(e.target)&&e.target!==input) box.style.display='none';}); input.addEventListener('blur',()=>{if(input.value.trim()&&!getAllProjectNames().includes(input.value.trim())){input.value=''; showEncourageToast("请从列表选择项目");}}); }
+    
+    function addInbound() { const name=document.getElementById('inName').value.trim(); if(!name){showEncourageToast("❌ 请填写材料名称");return;} const project=document.getElementById('inProject').value.trim(); if(!project){showEncourageToast("❌ 请填写项目名称");return;} const part=document.getElementById('inPart').value.trim()||""; let time=document.getElementById('inTime').value||getCurrentDateTimeLocal(); const spec=document.getElementById('inSpec').value, unit=document.getElementById('inUnit').value; const price=parseFloat(document.getElementById('inPrice').value); let qty=parseInt(document.getElementById('inQty').value); if(isNaN(qty)||qty<=0) qty=1; inboundRecords.push({id:Date.now(),name,project,part,time,spec,unit,price:isNaN(price)?null:price,quantity:qty,remark:document.getElementById('inRemark').value}); saveData(); document.getElementById('inName').value=''; document.getElementById('inProject').value=''; document.getElementById('inPart').value=''; document.getElementById('inSpec').value=''; document.getElementById('inUnit').value=''; document.getElementById('inPrice').value=''; document.getElementById('inQty').value='1'; document.getElementById('inRemark').value=''; refreshAllTimes(); showEncourageToast(`✅ 入库成功: ${name} x${qty}`); if(document.querySelector('.nav-item.active-nav')?.dataset.page==='stock') renderStockPage(); }
+    function addOutbound() { const name=document.getElementById('outName').value.trim(); const validNames=getAllInNames(); if(!name||!validNames.includes(name)){showEncourageToast("❌ 出库名称无效"); document.getElementById('outName').value='';return;} const project=document.getElementById('outProject').value.trim(); const validProjects=getAllProjectNames(); if(!project||!validProjects.includes(project)){showEncourageToast("❌ 项目无效"); document.getElementById('outProject').value='';return;} let qty=parseInt(document.getElementById('outQty').value); if(isNaN(qty)||qty<=0) return showEncourageToast("❌ 数量无效"); const stock=computeStock(name); if(qty>stock) return showEncourageToast(`⚠️ 库存不足,现有${stock}`); const user=document.getElementById('outUser').value.trim(); if(!user) return showEncourageToast("❌ 请填写领用人"); let outTime=document.getElementById('outTime').value||getCurrentDateTimeLocal(); outboundRecords.push({id:Date.now(),name,project,quantity:qty,user,time:outTime,remark:document.getElementById('outRemark').value}); saveData(); document.getElementById('outName').value=''; document.getElementById('outProject').value=''; document.getElementById('outQty').value='1'; document.getElementById('outUser').value=''; document.getElementById('outRemark').value=''; refreshAllTimes(); showEncourageToast(`📤 出库成功: ${name} x${qty}`); if(document.querySelector('.nav-item.active-nav')?.dataset.page==='stock') renderStockPage(); }
+    
+    function handleExcelImport(file) { const reader=new FileReader(); reader.onload=function(e){ const data=new Uint8Array(e.target.result); const workbook=XLSX.read(data,{type:'array'}); const rows=XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]); if(!rows.length){showEncourageToast("表格为空");return;} let cnt=0; const nowTime=getCurrentDateTimeLocal(); for(let row of rows){ const name=(row['材料名称']||row['物料名称']||row['名称']||'').toString().trim(); const spec=(row['规格']||'').toString().trim(); const unit=(row['单位']||'').toString().trim(); let qty=parseFloat(row['数量']||row['数量(个)']||0); if(isNaN(qty)||qty<=0) continue; const project=(row['项目名称']||'').toString().trim()||""; if(!name) continue; inboundRecords.push({id:Date.now()+Math.random(),name,project,part:"",time:nowTime,spec,unit,price:null,quantity:qty,remark:"[Excel导入]"}); cnt++; } if(cnt){saveData(); showEncourageToast(`📂 导入 ${cnt} 条数据`); renderStockPage(); refreshAllTimes();} else showEncourageToast("未发现有效数据"); }; reader.readAsArrayBuffer(file); }
+    function selectFileAndImport() { const inp=document.createElement('input'); inp.type='file'; inp.accept='.xls,.xlsx,.csv'; inp.onchange=(e)=>{if(e.target.files[0]) handleExcelImport(e.target.files[0]); hideImportModal();}; inp.click(); }
+    function showImportModal() { document.getElementById('permissionOverlay').classList.add('show'); }
+    function hideImportModal() { document.getElementById('permissionOverlay').classList.remove('show'); }
+    
+    function initNavigation() { const navs=document.querySelectorAll('.nav-item'); const pages={in:document.getElementById('inPage'),out:document.getElementById('outPage'),stock:document.getElementById('stockPage')}; const switchPage=(id)=>{ Object.values(pages).forEach(p=>p.classList.remove('active-page')); pages[id].classList.add('active-page'); navs.forEach(n=>n.dataset.page===id?n.classList.add('active-nav'):n.classList.remove('active-nav')); if(id==='stock') renderStockPage(); else refreshAllTimes(); }; navs.forEach(n=>n.addEventListener('click',()=>switchPage(n.dataset.page))); switchPage('in'); }
+    function bindButtons() { document.getElementById('addInBtn')?.addEventListener('click',addInbound); document.getElementById('addOutBtn')?.addEventListener('click',addOutbound); document.getElementById('importExcelBtn')?.addEventListener('click',showImportModal); document.getElementById('confirmImportBtn')?.addEventListener('click',selectFileAndImport); document.getElementById('closeImportBtn')?.addEventListener('click',hideImportModal); document.getElementById('cancelDeleteBtn')?.addEventListener('click',hideDeleteConfirm); document.getElementById('confirmDeleteBtn')?.addEventListener('click',executeDeleteMaterial); document.getElementById('exportSearchResultBtn')?.addEventListener('click',exportFilteredResult); document.getElementById('unifiedSearch')?.addEventListener('input',()=>renderStockPage()); }
+    function init() { loadData(); refreshAllTimes(); setInterval(refreshAllTimes,60000); initNavigation(); bindButtons(); setupProjectSuggest(); setupPartSuggest(); setupOutNameSuggest(); setupOutProjectSuggest(); renderStockPage(); }
+    init();
+</script>
+</body>
+</html>
